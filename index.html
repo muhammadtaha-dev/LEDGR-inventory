@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LEDGR — Mobile Inventory</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root {
+  --ivory:      #FAF8F4;
+  --ivory-2:    #F4F1EB;
+  --ivory-3:    #EDE9E1;
+  --ivory-4:    #E5E0D5;
+  --parchment:  #DDD7CB;
+  --ink:        #1C1A17;
+  --ink-2:      #3A3731;
+  --ink-3:      #6B6760;
+  --ink-4:      #9C9890;
+  --ink-5:      #C2BEB6;
+  --bronze:     #8A6D3B;
+  --bronze-2:   #A0804A;
+  --bronze-3:   #C4A46B;
+  --bronze-pale:#F0E8D8;
+  --bronze-glow:rgba(138,109,59,0.08);
+  --line:       rgba(138,109,59,0.12);
+  --line-2:     rgba(138,109,59,0.22);
+  --success:    #3B7A57;
+  --danger:     #9B3535;
+  --shadow-sm:  0 1px 3px rgba(28,26,23,0.06), 0 1px 2px rgba(28,26,23,0.04);
+  --shadow-md:  0 4px 12px rgba(28,26,23,0.08), 0 2px 4px rgba(28,26,23,0.04);
+  --shadow-lg:  0 12px 32px rgba(28,26,23,0.10), 0 4px 8px rgba(28,26,23,0.05);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 300;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  pointer-events:none;
+  z-index:0;
+}
+
+body::after {
+  content:'';
+  position:fixed;
+  top:-200px;left:50%;
+  transform:translateX(-50%);
+  width:800px;height:400px;
+  background:radial-gradient(ellipse,rgba(138,109,59,0.06) 0%,transparent 65%);
+  pointer-events:none;
+  z-index:0;
+}
+
+.page {
+  position:relative;
+  z-index:1;
+  max-width:820px;
+  margin:0 auto;
+  padding:0 1.25rem 5rem;
+}
+
+/* ── HEADER ── */
+header {
+  padding: 2rem 0 1.75rem;
+  border-bottom: 1px solid var(--ivory-4);
+  margin-bottom: 2rem;
+  animation: pageIn 0.6s 0.05s ease both;
+}
+
+.header-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  color: var(--bronze);
+  line-height: 1;
+}
+
+.logo-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(0.48rem, 1.5vw, 0.55rem);
+  letter-spacing: 0.28em;
+  color: var(--ink-4);
+  margin-top: 8px;
+  text-transform: uppercase;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 1px solid var(--ivory-4);
+  padding: 6px 14px;
+  border-radius: 3px;
+  box-shadow: var(--shadow-sm);
+}
+
+.live-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 6px rgba(59,122,87,0.6);
+  animation: livepulse 2.6s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livepulse {
+  0%,100% { opacity:1; box-shadow:0 0 6px rgba(59,122,87,0.6); }
+  50%      { opacity:0.4; box-shadow:0 0 2px rgba(59,122,87,0.2); }
+}
+
+.live-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  color: var(--ink-4);
+  white-space: nowrap;
+}
+
+.webhook-line {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.52rem;
+  color: var(--ink-5);
+  letter-spacing: 0.04em;
+  word-break: break-all;
+  text-align: right;
+}
+
+/* ── STATS ── */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 2rem;
+  animation: pageIn 0.6s 0.15s ease both;
+}
+
+.stat {
+  background: white;
+  border: 1px solid var(--ivory-4);
+  border-radius: 4px;
+  padding: 1.25rem 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.25s, transform 0.25s, border-color 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::before {
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;height:2px;
+  background: linear-gradient(90deg, transparent, var(--bronze-3), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.stat:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); border-color: var(--line-2); }
+.stat:hover::before { opacity: 1; }
+
+.stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(0.48rem, 1.2vw, 0.56rem);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  margin-bottom: 0.7rem;
+}
+
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.stat-num.gold { color: var(--bronze); }
+
+.stat-num.flash { animation: numflash 0.45s ease; }
+
+@keyframes numflash {
+  0%   { opacity: 0.15; transform: translateY(-6px); }
+  100% { opacity: 1;    transform: translateY(0); }
+}
+
+.stat-sub {
+  font-size: clamp(0.55rem, 1.2vw, 0.63rem);
+  color: var(--ink-5);
+  margin-top: 5px;
+  letter-spacing: 0.03em;
+}
+
+/* ── OPS HEADER ── */
+.ops-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  animation: pageIn 0.6s 0.22s ease both;
+}
+
+.ops-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  color: var(--ink-4);
+  text-transform: uppercase;
+}
+
+.ops-clear {
+  background: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-5);
+  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  transition: all 0.15s;
+}
+.ops-clear:hover { border-color: var(--ivory-4); color: var(--ink-3); background: white; }
+
+/* ── CHAT ── */
+.chat-wrap {
+  background: white;
+  border: 1px solid var(--ivory-4);
+  border-radius: 5px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  animation: pageIn 0.6s 0.28s ease both;
+}
+
+.chat-body {
+  padding: 1.25rem;
+  min-height: 300px;
+  max-height: 60vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: var(--ivory);
+}
+
+.chat-body::-webkit-scrollbar { width: 3px; }
+.chat-body::-webkit-scrollbar-track { background: transparent; }
+.chat-body::-webkit-scrollbar-thumb { background: var(--parchment); border-radius: 2px; }
+
+.msg {
+  max-width: 88%;
+  animation: msgIn 0.22s ease;
+}
+
+@keyframes msgIn {
+  from { opacity:0; transform:translateY(7px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.msg-user { align-self:flex-end; }
+.msg-ai   { align-self:flex-start; }
+
+.bubble {
+  padding: 0.75rem 1rem;
+  font-size: clamp(0.78rem, 2vw, 0.83rem);
+  line-height: 1.75;
+  border-radius: 4px;
+  font-weight: 300;
+  word-break: break-word;
+}
+
+.msg-user .bubble {
+  background: var(--bronze);
+  color: white;
+  border-bottom-right-radius: 1px;
+  box-shadow: var(--shadow-sm);
+}
+
+.msg-ai .bubble {
+  background: white;
+  border: 1px solid var(--ivory-4);
+  color: var(--ink-2);
+  border-bottom-left-radius: 1px;
+  box-shadow: var(--shadow-sm);
+}
+
+.msg-ai.op-success .bubble {
+  border-left: 2px solid var(--success);
+  background: #f5faf8;
+  color: var(--ink);
+}
+
+.msg-ai.op-error .bubble {
+  border-left: 2px solid var(--danger);
+  background: #fdf5f5;
+  color: var(--ink);
+}
+
+.msg-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.5rem;
+  color: var(--ink-5);
+  margin-top: 5px;
+  letter-spacing: 0.07em;
+}
+
+.msg-user .msg-meta { text-align:right; }
+
+/* Typing */
+.typing-wrap {
+  align-self:flex-start;
+  display:flex;align-items:center;gap:5px;
+  padding:0.75rem 1rem;
+  background:white;
+  border:1px solid var(--ivory-4);
+  border-radius:4px;
+  border-bottom-left-radius:1px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tdot {
+  width:4px;height:4px;border-radius:50%;
+  background: var(--ink-5);
+  animation:tdot 1.2s infinite;
+}
+.tdot:nth-child(2){animation-delay:0.2s;}
+.tdot:nth-child(3){animation-delay:0.4s;}
+
+@keyframes tdot {
+  0%,80%,100%{opacity:0.25;transform:scale(0.85);}
+  40%{opacity:1;transform:scale(1.2);}
+}
+
+/* ── CHAT FOOTER ── */
+.chat-footer {
+  border-top: 1px solid var(--ivory-4);
+  background: white;
+  padding: 1rem 1.25rem;
+}
+
+.quick-row {
+  display:flex;gap:0.35rem;flex-wrap:wrap;margin-bottom:0.85rem;
+}
+
+.qbtn {
+  background: var(--ivory);
+  border: 1px solid var(--ivory-4);
+  color: var(--ink-3);
+  font-family:'DM Mono',monospace;
+  font-size:clamp(0.5rem, 1.3vw, 0.56rem);
+  letter-spacing:0.08em;
+  padding:5px 11px;border-radius:2px;cursor:pointer;
+  transition:all 0.15s;
+  white-space: nowrap;
+}
+
+.qbtn:hover {
+  border-color: var(--bronze-3);
+  color: var(--bronze);
+  background: var(--bronze-pale);
+}
+
+/* Touch-friendly tap area on mobile */
+@media (hover: none) {
+  .qbtn { padding: 8px 13px; }
+}
+
+.input-row {
+  display:flex;
+  gap:0.6rem;
+  align-items:flex-end;
+}
+
+.chat-input {
+  flex:1;
+  background: var(--ivory);
+  border: 1px solid var(--ivory-4);
+  border-radius: 3px;
+  padding: 0.75rem 0.9rem;
+  color: var(--ink);
+  font-family:'Outfit',sans-serif;
+  font-size: clamp(0.8rem, 2vw, 0.83rem);
+  font-weight:300;
+  resize:none;outline:none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  min-height:44px;
+  max-height:120px;
+  line-height:1.5;
+  -webkit-appearance: none;
+}
+
+.chat-input::placeholder { color: var(--ink-5); }
+.chat-input:focus {
+  border-color: var(--bronze-3);
+  box-shadow: 0 0 0 3px rgba(138,109,59,0.07);
+}
+
+.send-btn {
+  background: var(--bronze);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.25rem;
+  font-family:'DM Mono',monospace;
+  font-size:0.62rem;
+  letter-spacing:0.12em;
+  font-weight:500;
+  cursor:pointer;
+  border-radius:3px;
+  transition:all 0.15s;
+  white-space:nowrap;
+  box-shadow: var(--shadow-sm);
+  min-height: 44px;
+  flex-shrink: 0;
+}
+
+.send-btn:hover  { background: var(--bronze-2); box-shadow: var(--shadow-md); }
+.send-btn:active { transform:scale(0.97); }
+.send-btn:disabled { opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none; }
+
+/* ── HINTS ── */
+.hints {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:2rem;
+  animation:pageIn 0.6s 0.35s ease both;
+}
+
+.hint {
+  background: white;
+  border: 1px solid var(--ivory-4);
+  border-radius: 4px;
+  padding: 1.1rem 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.hint:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+.hint-icon {
+  font-family:'DM Mono',monospace;
+  font-size:0.56rem;
+  color:var(--bronze-3);
+  letter-spacing:0.14em;
+  margin-bottom:0.6rem;
+}
+
+.hint-text {
+  font-size:clamp(0.68rem, 1.8vw, 0.74rem);
+  color:var(--ink-3);
+  line-height:1.65;
+  font-style:italic;
+}
+
+/* ── TOAST ── */
+.toast {
+  position:fixed;
+  bottom:1.5rem;
+  right:1rem;
+  left:1rem;
+  max-width:320px;
+  margin:0 auto;
+  background:white;
+  border:1px solid var(--ivory-4);
+  box-shadow: var(--shadow-lg);
+  padding:0.75rem 1.25rem;
+  font-family:'DM Mono',monospace;
+  font-size:0.65rem;
+  letter-spacing:0.06em;
+  color:var(--ink-2);
+  border-radius:4px;
+  z-index:9999;
+  transform:translateY(80px);
+  opacity:0;
+  transition:all 0.3s ease;
+}
+
+.toast.show    { transform:translateY(0);opacity:1; }
+.toast.success { border-left:2px solid var(--success);color:var(--success); }
+.toast.error   { border-left:2px solid var(--danger);color:var(--danger); }
+
+@keyframes pageIn {
+  from { opacity:0;transform:translateY(12px); }
+  to   { opacity:1;transform:translateY(0); }
+}
+
+/* ── RESPONSIVE BREAKPOINTS ── */
+
+/* Tablet — 768px */
+@media(max-width:768px){
+  .stats-row { grid-template-columns: repeat(2,1fr); }
+  .hints { grid-template-columns: repeat(2,1fr); }
+  .msg { max-width: 90%; }
+}
+
+/* Mobile — 480px */
+@media(max-width:480px){
+  .page { padding: 0 0.85rem 4rem; }
+
+  header { padding: 1.5rem 0 1.25rem; }
+
+  .header-inner { flex-direction: column; align-items: flex-start; gap: 0.85rem; }
+
+  .header-right { align-items: flex-start; }
+
+  .webhook-line { text-align: left; }
+
+  .stats-row {
+    grid-template-columns: repeat(2,1fr);
+    gap: 8px;
+  }
+
+  .stat { padding: 1rem 0.9rem; }
+
+  .hints { grid-template-columns: 1fr; }
+
+  .chat-body {
+    padding: 1rem;
+    max-height: 55vh;
+  }
+
+  .chat-footer { padding: 0.85rem 1rem; }
+
+  .quick-row { gap: 0.3rem; }
+
+  .qbtn { font-size: 0.5rem; padding: 6px 9px; }
+
+  .msg { max-width: 95%; }
+
+  .bubble { padding: 0.65rem 0.85rem; }
+
+  .send-btn { padding: 0.75rem 1rem; font-size: 0.58rem; letter-spacing: 0.08em; }
+
+  .ops-title { font-size: 0.52rem; }
+}
+
+/* Very small — 360px */
+@media(max-width:360px){
+  .stats-row { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-num { font-size: 1.6rem; }
+  .logo { font-size: 1.8rem; }
+  .qbtn { font-size: 0.48rem; padding: 5px 8px; }
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <div class="header-inner">
+      <div>
+        <div class="logo">LEDGR</div>
+        <div class="logo-sub">Mobile Inventory &middot; Google Sheets &middot; AI Powered</div>
+      </div>
+      <div class="header-right">
+        <div class="live-pill">
+          <div class="live-dot"></div>
+          <div class="live-text">AGENT ONLINE</div>
+        </div>
+        <div class="webhook-line">muhammad245678.app.n8n.cloud</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="stats-row">
+    <div class="stat">
+      <div class="stat-label">Total Items</div>
+      <div class="stat-num" id="stat-total">—</div>
+      <div class="stat-sub">product lines</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Total Units</div>
+      <div class="stat-num gold" id="stat-units">—</div>
+      <div class="stat-sub">in stock</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Total Value</div>
+      <div class="stat-num" id="stat-value">—</div>
+      <div class="stat-sub">PKR</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Categories</div>
+      <div class="stat-num" id="stat-cats">—</div>
+      <div class="stat-sub">distinct types</div>
+    </div>
+  </div>
+
+  <div class="ops-header">
+    <div class="ops-title">— Inventory Operations</div>
+    <button class="ops-clear" onclick="clearChat()">CLEAR CHAT</button>
+  </div>
+
+  <div class="chat-wrap">
+    <div class="chat-body" id="chat-body">
+      <div class="msg msg-ai">
+        <div class="bubble">
+          Good day. I interface directly with your Google Sheet. Tell me what to do — I will handle the rest and your sheet updates in real time. You can add, update, or delete any product row.
+        </div>
+        <div class="msg-meta">LEDGR AGENT &middot; NOW</div>
+      </div>
+    </div>
+
+    <div class="chat-footer">
+      <div class="quick-row">
+        <button class="qbtn" onclick="quick('Add new product')">+ ADD PRODUCT</button>
+        <button class="qbtn" onclick="quick('Delete a product')">− DELETE</button>
+        <button class="qbtn" onclick="quick('Update quantity of a product')">↺ UPDATE QTY</button>
+        <button class="qbtn" onclick="quick('Show inventory summary')">∑ SUMMARY</button>
+      </div>
+      <div class="input-row">
+        <textarea
+          class="chat-input"
+          id="chat-input"
+          placeholder='e.g. "Add USB-C Hub, category Cable, price 1800, qty 20"'
+          rows="1"
+          onkeydown="handleKey(event)"
+        ></textarea>
+        <button class="send-btn" id="send-btn" onclick="send()">SEND</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="hints">
+    <div class="hint">
+      <div class="hint-icon">+ CREATE</div>
+      <div class="hint-text">"Add iPhone 15 Case, category Case, price 950, qty 30"</div>
+    </div>
+    <div class="hint">
+      <div class="hint-icon">↺ UPDATE</div>
+      <div class="hint-text">"Update quantity of Tempered Glass to 45"</div>
+    </div>
+    <div class="hint">
+      <div class="hint-icon">− DELETE</div>
+      <div class="hint-text">"Delete Mobile Stand from inventory"</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WEBHOOK = "https://muhammad245678.app.n8n.cloud/webhook/mobile-inventory";
+
+function tryExtractStats(aiText) {
+  const arrMatch = aiText.match(/\[[\s\S]*?\]/);
+  if (arrMatch) {
+    try {
+      const arr = JSON.parse(arrMatch[0]);
+      if (Array.isArray(arr) && arr.length && arr[0].name) {
+        const total = arr.length;
+        const units = arr.reduce((s,i) => s + Number(i.qty||i.quantity||0), 0);
+        const value = arr.reduce((s,i) => s + Number(i.price||0) * Number(i.qty||i.quantity||0), 0);
+        const cats  = new Set(arr.map(i => i.category||i.type||'Other')).size;
+        setStats(total, units, value, cats);
+        return;
+      }
+    } catch(e) {}
+  }
+  const objMatch = aiText.match(/\{[\s\S]*?\}/);
+  if (objMatch) {
+    try {
+      const obj = JSON.parse(objMatch[0]);
+      if (obj.total !== undefined || obj.totalItems !== undefined) {
+        setStats(
+          obj.total      || obj.totalItems     || null,
+          obj.units      || obj.totalUnits     || null,
+          obj.value      || obj.totalValue     || null,
+          obj.categories || obj.totalCategories|| null
+        );
+      }
+    } catch(e) {}
+  }
+}
+
+function setStats(total, units, value, cats) {
+  const fmt = v => {
+    if (v === null || v === undefined) return null;
+    if (typeof v === 'number') return v >= 1000 ? (v/1000).toFixed(1)+'K' : v;
+    return v;
+  };
+  const flash = (id, val) => {
+    if (val === null) return;
+    const el = document.getElementById(id);
+    el.textContent = fmt(val);
+    el.classList.remove('flash');
+    void el.offsetWidth;
+    el.classList.add('flash');
+    el.addEventListener('animationend', () => el.classList.remove('flash'), {once:true});
+  };
+  flash('stat-total', total);
+  flash('stat-units', units);
+  flash('stat-value', value);
+  flash('stat-cats',  cats);
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+
+function addMsg(html, role, variant) {
+  const body = document.getElementById('chat-body');
+  const d = document.createElement('div');
+  d.className = 'msg msg-' + role + (variant ? ' ' + variant : '');
+  d.innerHTML = `<div class="bubble">${html}</div><div class="msg-meta">${role==='user'?'YOU':'LEDGR AGENT'} &middot; ${getTime()}</div>`;
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+}
+
+function showTyping() {
+  const body = document.getElementById('chat-body');
+  const d = document.createElement('div');
+  d.id = 'typing';
+  d.className = 'typing-wrap';
+  d.innerHTML = '<div class="tdot"></div><div class="tdot"></div><div class="tdot"></div>';
+  body.appendChild(d);
+  body.scrollTop = body.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing');
+  if (t) t.remove();
+}
+
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast ' + (type||'success') + ' show';
+  setTimeout(() => el.className = 'toast', 3500);
+}
+
+function clearChat() {
+  document.getElementById('chat-body').innerHTML =
+    `<div class="msg msg-ai"><div class="bubble">Chat cleared. Ready for your next operation.</div><div class="msg-meta">LEDGR AGENT &middot; ${getTime()}</div></div>`;
+}
+
+function detectVariant(aiText) {
+  const a = aiText.toLowerCase();
+  if (a.includes('error') || a.includes('failed') || a.includes('not found') || a.includes('unable')) return 'op-error';
+  if (a.includes('added') || a.includes('deleted') || a.includes('updated') || a.includes('created') || a.includes('removed') || a.includes('success')) return 'op-success';
+  return '';
+}
+
+async function send() {
+  const input = document.getElementById('chat-input');
+  const btn   = document.getElementById('send-btn');
+  const text  = input.value.trim();
+  if (!text) return;
+
+  addMsg(text, 'user', '');
+  input.value = '';
+  input.style.height = 'auto';
+  btn.disabled = true;
+  showTyping();
+
+  try {
+    const res = await fetch(WEBHOOK, {
+      method:  'POST',
+      headers: {'Content-Type':'application/json'},
+      body:    JSON.stringify({ chatInput: text, sessionId: 'ledgr-' + Date.now() }),
+    });
+
+    const raw = await res.text();
+    removeTyping();
+
+    let reply;
+    try {
+      const data = JSON.parse(raw);
+      reply = data.output || data.message || data.text || data.response ||
+              (Array.isArray(data) && data[0] && (data[0].output || data[0].text)) ||
+              JSON.stringify(data);
+    } catch { reply = raw; }
+
+    const variant = detectVariant(reply);
+    const formatted = reply
+      .split('•')
+      .filter(s => s.trim())
+      .map(s => '• ' + s.trim())
+      .join('<br>');
+    addMsg(formatted, 'ai', variant);
+    tryExtractStats(reply);
+
+    showToast(
+      variant === 'op-success' ? 'Sheet updated successfully' :
+      variant === 'op-error'   ? 'Operation failed' : 'Response received',
+      variant === 'op-error' ? 'error' : 'success'
+    );
+
+  } catch(err) {
+    removeTyping();
+    addMsg('Could not reach the n8n agent. Make sure your workflow is <strong>active</strong>.', 'ai', 'op-error');
+    showToast('Connection failed', 'error');
+  }
+
+  btn.disabled = false;
+}
+
+function quick(text) {
+  document.getElementById('chat-input').value = text;
+  document.getElementById('chat-input').focus();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+}
+
+/* Auto-grow textarea */
+document.getElementById('chat-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+</script>
+</body>
+</html>
